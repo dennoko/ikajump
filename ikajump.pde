@@ -130,8 +130,8 @@ abstract class Item {
     abstract void display();
 }
 
-class goalItem extends Item {
-    goalItem(float x, float y) {
+class GoalItem extends Item {
+    GoalItem(float x, float y) {
         super(x, y);
     }
 
@@ -150,8 +150,8 @@ class goalItem extends Item {
     }
 }
 
-class boostItem extends Item {
-    boostItem(float x, float y) {
+class BoostItem extends Item {
+    BoostItem(float x, float y) {
         super(x, y);
     }
 
@@ -250,9 +250,9 @@ class MovePlatform extends Platform {
 
 
 Player player;
-ArrayList<goalItem> goals = new ArrayList<goalItem>();
-ArrayList<boostItem> boostItems = new ArrayList<boostItem>();
+GoalItem goal;
 ArrayList<Star> stars = new ArrayList<Star>();
+ArrayList<BoostItem> boostItems = new ArrayList<BoostItem>();
 ArrayList<Platform> platforms = new ArrayList<Platform>();
 ArrayList<MovePlatform> movePlatforms = new ArrayList<MovePlatform>();
 
@@ -263,18 +263,17 @@ void setup() {
     noStroke();
     
     player = new Player(width/2, totalHeight - blockSize - ballSize/2);
-    goals.add(new goalItem(width/2, 150));
-    boostItems.add(new boostItem(random(width), 600));
-    boostItems.add(new boostItem(random(width), 1000));
-    boostItems.add(new boostItem(random(width), 1400));
-    boostItems.add(new boostItem(random(width), 1800));
+    goal = new GoalItem(width/2, 150);
     for (int i = 0; i < 8; ++i) {
         stars.add(new Star());
     }
+    boostItems.add(new BoostItem(random(width), 600));
+    boostItems.add(new BoostItem(random(width), 1000));
+    boostItems.add(new BoostItem(random(width), 1400));
+    boostItems.add(new BoostItem(random(width), 1800));
     platforms.add(new Platform(0, totalHeight - blockSize, width/blockSize));
     platforms.add(new Platform(100, totalHeight - boxHeight, 10));
     platforms.add(new Platform(400, totalHeight - boxHeight*2, 5));
-    // platforms.add(new Platform(600, totalHeight - boxHeight*3, 3));
     platforms.add(new Platform(700, totalHeight - boxHeight*4, 15));
     movePlatforms.add(new MovePlatform(200, totalHeight - boxHeight*3, 5, 1, 100));
 }
@@ -308,11 +307,9 @@ void draw() {
         player.update();
     }
 
-    for (goalItem goal : goals) {
-        goal.collision(player);
-        goal.display();
-    }
-    for (boostItem boostItem : boostItems) {
+    goal.collision(player);
+    goal.display();
+    for (BoostItem boostItem : boostItems) {
         boostItem.collision(player);
         boostItem.display();
     }
