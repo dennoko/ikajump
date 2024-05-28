@@ -28,6 +28,7 @@ void keyReleased() {
 }
 
 class Player {
+    String status = "alive";
     float x, y;
     float px, py;
     float vx = 0, vy = 0;
@@ -35,6 +36,7 @@ class Player {
     float gravity = 0.5;
     int size =  ballSize;
     int radius = size / 2;
+    int jumpCount = 1;
     int chargeFrame = 0;
     float maxJump = -20;
 
@@ -50,26 +52,33 @@ class Player {
             vx = 0;
             return;
         }
-        if (vy != 0) {
+        if (vy != 0 && status == "alive") {
             vx += maxVelocity * right;
         }
     }
 
     void chargeJump() {
-        if (chargeFrame < (fps/2)) {
+        if (chargeFrame < (fps/2) && status == "alive") {
             chargeFrame++;
         }
     }
 
     void jump() {
-        if (chargeFrame != 0) {
+        if (chargeFrame != 0 && jumpCount > 0 && status == "alive") {
             vy = maxJump * ((float)chargeFrame / (fps/2));
-            chargeFrame = 0;
+            jumpCount--;
         }
+        chargeFrame = 0;
+    }
+
+    void dead() {
+        status = "dead";
     }
 
     void update() {
-        vy += gravity;
+        if (status == "alive") {
+            vy += gravity;
+        }
         if (vy > 0) {
             vy = min(vy, maxVelocity*8);
         } else {
@@ -80,9 +89,9 @@ class Player {
         y += vy;
         x += vx;
         if (x < 0) {
-            x = width;            
+            x += width;            
         } else if (x > width) {
-            x = 0;
+            x -= width;
         }
         if (y > totalHeight - radius) {
             y = totalHeight - radius;
@@ -189,14 +198,14 @@ class Star {
 }
 
 class Platform {
-    float x, y, w, vx;
-    color c;
+    float x, y, w, px, py, vx = 0, vy = 0;
+    color c = color(127, 63, 0);
     Platform(float x, float y, int w) {
         this.x = x;
         this.y = y;
         this.w = w;
-        this.vx = 0;
-        this.c = color(127, 63, 0);
+        px = this.x;
+        py = this.y;
     }
 
     void collision(Player player) {
@@ -204,6 +213,7 @@ class Platform {
             player.y = y - player.radius;
             player.vy = 0;
             player.x += this.vx;
+            player.jumpCount = 1;
         }
     }
 
@@ -231,18 +241,52 @@ class MovePlatform extends Platform {
     }
 
     void update() {
+        px = x;
         x += vx;
-        if (x < x0 - rangeX) {
-            x = x0 - rangeX;
+        if (x > x0 + rangeX) {
+            x = - x + (x0 + rangeX)*2;
             vx = -vx;
-        } else if (x > x0 + rangeX) {
-            x = x0 + rangeX;
+        } else if (x < x0) {
+            x = - x + x0*2;
             vx = -vx;
         }
         if (x < 0) {
-            x = width;
+            x += width;
         } else if (x > width) {
-            x = 0;
+            x -= width;
+        }
+    }
+}
+
+class Acid extends Platform {
+    Acid(float y, float vy) {
+        super(0, y, width/blockSize);
+        this.vy = vy;
+        this.c = color(0, 255, 0);
+    }
+
+    void update() {
+        py = y;
+        y += vy;
+        if (y < 0) {
+            y = 0;
+        }
+    }
+
+    void collision(Player player) {
+        if ((player.py + player.radius <= py && player.y + player.radius > y) && ((player.x + player.radius > x && player.x - player.radius < x + blockSize*w) || (player.x + player.radius > x - width && player.x - player.radius < x + blockSize*w - width))) {
+            // player.y = y - player.radius;
+            player.vy = 0;
+            player.dead();
+        }
+    }
+
+    void display() {
+        float drawY = y - baseY;
+        if (-height/2 < drawY && drawY < height*3/2) {
+            fill(c);
+            rect(x, drawY, blockSize*w, blockSize);
+            rect(x, drawY+blockSize, blockSize*w, height*3/2);
         }
     }
 }
@@ -251,6 +295,7 @@ class MovePlatform extends Platform {
 
 Player player;
 GoalItem goal;
+Acid acid;
 ArrayList<Star> stars = new ArrayList<Star>();
 ArrayList<BoostItem> boostItems = new ArrayList<BoostItem>();
 ArrayList<Platform> platforms = new ArrayList<Platform>();
@@ -262,8 +307,10 @@ void setup() {
     background(0);
     noStroke();
     
-    player = new Player(width/2, totalHeight - blockSize - ballSize/2);
-    goal = new GoalItem(width/2, 150);
+    player = new Player(width/2, totalHeight - blockSize*2 - ballSize/2);
+    goal = new GoalItem(width/2, 200);
+    platforms.add(new Platform(0, totalHeight - blockSize*2, width/blockSize));
+    acid = new Acid(totalHeight + height * 1, -1.5);
     for (int i = 0; i < 8; ++i) {
         stars.add(new Star());
     }
@@ -271,11 +318,11 @@ void setup() {
     boostItems.add(new BoostItem(random(width), 1000));
     boostItems.add(new BoostItem(random(width), 1400));
     boostItems.add(new BoostItem(random(width), 1800));
-    platforms.add(new Platform(0, totalHeight - blockSize, width/blockSize));
-    platforms.add(new Platform(100, totalHeight - boxHeight, 10));
-    platforms.add(new Platform(400, totalHeight - boxHeight*2, 5));
-    platforms.add(new Platform(700, totalHeight - boxHeight*4, 15));
-    movePlatforms.add(new MovePlatform(200, totalHeight - boxHeight*3, 5, 1, 100));
+    platforms.add(new Platform(random(width), totalHeight - boxHeight, 10));
+    platforms.add(new Platform(random(width), totalHeight - boxHeight*1.7, 5));
+    movePlatforms.add(new MovePlatform(random(width), totalHeight - boxHeight*2.4, 5, 1, 200));
+    platforms.add(new Platform(random(width), totalHeight - boxHeight*3.1, 15));
+    movePlatforms.add(new MovePlatform(random(width), totalHeight - boxHeight*3.8, 5, 2, 300));
 }
 
 
@@ -322,11 +369,20 @@ void draw() {
         movePlatform.collision(player);
         movePlatform.display();
     }
+    acid.update();
+    acid.collision(player);
+    acid.display();
     player.display();
 
     if (scene == "goal") {
         fill(255);
         textSize(50);
         text("Goal!", width/2 - 50, height/2);
+    }
+    if (player.status == "dead") {
+        fill(255);
+        textSize(50);
+        text("Game Over", width/2 - 100, height/2);
+        
     }
 }
