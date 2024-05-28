@@ -3,6 +3,7 @@ SoundFile sounds[] = new SoundFile[5];
 PImage images[] = new PImage[13];
 
 int fps = 60;
+int waitFrame = 0;
 color bgColor = color(31, 31, 95);
 boolean[] keys = new boolean[128];
 String scene = "pause";
@@ -39,13 +40,13 @@ class Player {
     float x, y;
     float px, py;
     float vx = 0, vy = 0;
-    float maxVelocity = 5;
+    float maxVelocity = 3;
     float gravity = 0.5;
     int size =  ballSize;
     int radius = size / 2;
     int jumpCount = 1;
     int chargeFrame = 0;
-    float maxJump = -20;
+    float maxJump = -22;
 
     Player(float x, float y) {
         this.x = x;
@@ -60,7 +61,11 @@ class Player {
             return;
         }
         if (vy != 0 && status == "alive") {
-            vx += maxVelocity * right;
+            if (chargeFrame > 0) {
+                vx += maxVelocity * right * 0.5;
+            } else {
+                vx = maxVelocity * right;
+            }
         }
     }
 
@@ -99,9 +104,9 @@ class Player {
             vy += gravity;
         }
         if (vy > 0) {
-            vy = min(vy, maxVelocity*8);
+            vy = min(vy, maxVelocity*16);
         } else {
-            vy = max(vy, -maxVelocity*8);
+            vy = max(vy, -maxVelocity*16);
         }
         px = x;
         py = y;
@@ -472,14 +477,6 @@ void draw() {
         }
     }
     
-    if (scene == "pause") {
-        fill(255);
-        textSize(50);
-        text("Press Space Key to Start", width/2 - 200, height/2);
-        if (keys[' '] || keys[32]) {
-            scene = "game";
-        }
-    }
     if (scene == "game") {
         player.move(0);
         if (keys['A'] || keys['a'] || keys[LEFT]) {
@@ -511,9 +508,12 @@ void draw() {
         acid.collision(player);
     }
     if (scene == "goal" || scene == "dead") {
-        if (keys['R'] || keys['r']) {
+        if (waitFrame > fps*3/2) {
             loadStage(stageNum);
             scene = "game";
+            waitFrame = 0;
+        } else {
+            waitFrame++;
         }
     }
 
@@ -534,14 +534,20 @@ void draw() {
         fill(255);
         textSize(50);
         text("Goal!", width/2 - 50, height/2);
-        textSize(20);
-        text("Press R to Continue", width/2 - 100, height/2 + 50);
     }
     if (scene == "dead") {
         fill(255);
         textSize(50);
         text("Game Over", width/2 - 100, height/2);
+    }
+    if (scene == "pause") {
+        fill(0, 127);
+        rect(0, 0, width, height);
+        fill(255);
         textSize(20);
-        text("Press R to Restart", width/2 - 100, height/2 + 50);
+        text("Press Space Key to Start", width/2 - 100, height/2);
+        if (keys[' '] || keys[32]) {
+            scene = "game";
+        }
     }
 }
