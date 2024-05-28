@@ -129,29 +129,33 @@ class Player {
     void display() {
         float drawY = y - baseY;
         if (-height/2 < drawY && drawY < height*3/2) {
-            if (chargeFrame == 0) {
-                image(images[0], x - radius, drawY - radius, size, size);
-            } else if (chargeFrame < fps/6) {
-                image(images[1], x - radius, drawY - radius, size, size);
-            } else if (chargeFrame < fps/3) {
-                image(images[2], x - radius, drawY - radius, size, size);
-            } else if (chargeFrame < fps/2) {
-                image(images[3], x - radius, drawY - radius, size, size);
+            if (status == "dead") {
+                image(images[7], x - radius, drawY - radius, size, size);
             } else {
-                int re = (chargeFrame - fps/2)/4 % 4;
-                switch (re) {
-                    case 0:
-                        image(images[4], x - radius, drawY - radius, size, size);
-                        break;
-                    case 1:
-                        image(images[5], x - radius, drawY - radius, size, size);
-                        break;
-                    case 2:
-                        image(images[6], x - radius, drawY - radius, size, size);
-                        break;
-                    case 3:
-                        image(images[5], x - radius, drawY - radius, size, size);
-                        break;
+                if (chargeFrame == 0) {
+                    image(images[0], x - radius, drawY - radius, size, size);
+                } else if (chargeFrame < fps/6) {
+                    image(images[1], x - radius, drawY - radius, size, size);
+                } else if (chargeFrame < fps/3) {
+                    image(images[2], x - radius, drawY - radius, size, size);
+                } else if (chargeFrame < fps/2) {
+                    image(images[3], x - radius, drawY - radius, size, size);
+                } else {
+                    int re = (chargeFrame - fps/2)/4 % 4;
+                    switch (re) {
+                        case 0:
+                            image(images[4], x - radius, drawY - radius, size, size);
+                            break;
+                        case 1:
+                            image(images[5], x - radius, drawY - radius, size, size);
+                            break;
+                        case 2:
+                            image(images[6], x - radius, drawY - radius, size, size);
+                            break;
+                        case 3:
+                            image(images[5], x - radius, drawY - radius, size, size);
+                            break;
+                    }
                 }
             }
         }
