@@ -1,5 +1,7 @@
 import processing.sound.*;
 SoundFile sounds[] = new SoundFile[5];
+PImage images[] = new PImage[13];
+
 int fps = 60;
 color bgColor = color(31, 31, 95);
 boolean[] keys = new boolean[128];
@@ -63,7 +65,7 @@ class Player {
     }
 
     void chargeJump() {
-        if (chargeFrame < (fps/2) && status == "alive") {
+        if (status == "alive") {
             chargeFrame++;
         }
     }
@@ -71,7 +73,7 @@ class Player {
     void jump() {
         if (chargeFrame != 0 && jumpCount > 0 && status == "alive") {
             sounds[0].play();
-            vy = maxJump * ((float)chargeFrame / (fps/2));
+            vy = maxJump * ((float)min(chargeFrame, fps/2) / (fps/2));
             jumpCount--;
         }
         chargeFrame = 0;
@@ -127,9 +129,31 @@ class Player {
     void display() {
         float drawY = y - baseY;
         if (-height/2 < drawY && drawY < height*3/2) {
-            // fill(255);
-            fill(map(chargeFrame, 0, 60, 64, 255), 0, 0);
-            ellipse(x, drawY, size, size);
+            if (chargeFrame == 0) {
+                image(images[0], x - radius, drawY - radius, size, size);
+            } else if (chargeFrame < fps/6) {
+                image(images[1], x - radius, drawY - radius, size, size);
+            } else if (chargeFrame < fps/3) {
+                image(images[2], x - radius, drawY - radius, size, size);
+            } else if (chargeFrame < fps/2) {
+                image(images[3], x - radius, drawY - radius, size, size);
+            } else {
+                int re = (chargeFrame - fps/2)/4 % 4;
+                switch (re) {
+                    case 0:
+                        image(images[4], x - radius, drawY - radius, size, size);
+                        break;
+                    case 1:
+                        image(images[5], x - radius, drawY - radius, size, size);
+                        break;
+                    case 2:
+                        image(images[6], x - radius, drawY - radius, size, size);
+                        break;
+                    case 3:
+                        image(images[5], x - radius, drawY - radius, size, size);
+                        break;
+                }
+            }
         }
     }
 }
@@ -169,8 +193,7 @@ class GoalItem extends Item {
         if (exists) {
             float drawY = y - baseY;
             if (-height/2 < drawY && drawY < height*3/2) {
-                fill(255, 255, 0);
-                ellipse(x, drawY, size, size);
+                image(images[8], x - radius, drawY - radius, size, size);
             }
         }
     }
@@ -190,8 +213,7 @@ class BoostItem extends Item {
         if (exists) {
             float drawY = y - baseY;
             if (-height/2 < drawY && drawY < height*3/2) {
-                fill(0, 255, 0);
-                ellipse(x, drawY, size, size);
+                image(images[12], x - radius, drawY - radius, size, size);
             }
         }
     }
@@ -219,6 +241,7 @@ class Platform {
     float x, y, px, py, vx = 0, vy = 0;
     int w;
     color c = color(127, 63, 0);
+    int imageNum = 9;
     Platform(float x, float y, int w) {
         this.x = x;
         this.y = y;
@@ -260,10 +283,13 @@ class Platform {
         }
         float endX = subX + blockSize*w;
         if (-height/2 < drawY && drawY < height*3/2) {
-            fill(c);
-            rect(subX, drawY, blockSize*w, blockSize);
+            for (int i = 0; i < w; i++) {
+                image(images[imageNum], subX + blockSize*i, drawY, blockSize, blockSize);
+            }
             if (endX > width) {
-                rect(subX - width, drawY, blockSize*w, blockSize);
+                for (int i = 0; i < w; i++) {
+                    image(images[imageNum], subX - width + blockSize*i, drawY, blockSize, blockSize);
+                }
             }
         }
     }
@@ -276,7 +302,8 @@ class MovePlatform extends Platform {
         this.x0 = x;
         this.vx = vx;
         this.rangeX = rangeX;
-        this.c = color(127, 127, 255);
+        // this.c = color(127, 127, 255);
+        this.imageNum = 10;
     }
 
     void update() {
@@ -302,7 +329,7 @@ class Acid extends Platform {
     Acid(float y, float vy) {
         super(0, y, width/blockSize);
         this.vy = vy;
-        this.c = color(255, 0, 255);
+        this.c = color(111, 31, 159);
     }
 
     void update() {
@@ -346,7 +373,9 @@ class Acid extends Platform {
         if (-height < drawY && drawY < height*3/2) {
             fill(c);
             rect(subX, drawY+blockSize/2, blockSize*w, height);
-            rect(subX, drawY, blockSize*w, blockSize);
+            for (int i = 0; i < w; i++) {
+                image(images[11], subX + blockSize*i, drawY, blockSize, blockSize);
+            }
         }
     }
 }
@@ -411,6 +440,19 @@ void setup() {
     sounds[2] = new SoundFile(this, "sounds/fish.mp3");
     sounds[3] = new SoundFile(this, "sounds/dead.mp3");
     sounds[4] = new SoundFile(this, "sounds/gameover.mp3");
+    images[0] = loadImage("images/ika.png");
+    images[1] = loadImage("images/charge1.png");
+    images[2] = loadImage("images/charge2.png");
+    images[3] = loadImage("images/charge3.png");
+    images[4] = loadImage("images/charge4.png");
+    images[5] = loadImage("images/charge5.png");
+    images[6] = loadImage("images/charge6.png");
+    images[7] = loadImage("images/dead.png");
+    images[8] = loadImage("images/goal.png");
+    images[9] = loadImage("images/block.png");
+    images[10] = loadImage("images/jerry.png");
+    images[11] = loadImage("images/acid.png");
+    images[12] = loadImage("images/fish.png");
     
     loadStage(stageNum);
 }
