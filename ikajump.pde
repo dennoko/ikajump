@@ -1,8 +1,13 @@
+import processing.sound.*;
+SoundFile sounds[] = new SoundFile[5];
 int fps = 60;
+color bgColor = color(31, 31, 95);
 boolean[] keys = new boolean[128];
-String scene = "game";
+String scene = "pause";
+int stageNum = 0;
+int maxStageNum = 0;
 int ballSize = 40;
-int blockSize = 20;
+int blockSize = ballSize/2;
 int boxHeight = 400;
 int boxNum = 5;
 int totalHeight = boxHeight * boxNum;
@@ -65,14 +70,26 @@ class Player {
 
     void jump() {
         if (chargeFrame != 0 && jumpCount > 0 && status == "alive") {
+            sounds[0].play();
             vy = maxJump * ((float)chargeFrame / (fps/2));
             jumpCount--;
         }
         chargeFrame = 0;
     }
 
+    void goal() {
+        sounds[1].play();
+        scene = "goal";
+        stageNum++;
+        if (stageNum > maxStageNum) {
+            stageNum = maxStageNum;
+        }
+    }
+
     void dead() {
+        sounds[3].play();
         status = "dead";
+        scene = "dead";
     }
 
     void update() {
@@ -111,7 +128,7 @@ class Player {
         float drawY = y - baseY;
         if (-height/2 < drawY && drawY < height*3/2) {
             // fill(255);
-            fill(map(chargeFrame, 0, 60, 128, 255), 0, 0);
+            fill(map(chargeFrame, 0, 60, 64, 255), 0, 0);
             ellipse(x, drawY, size, size);
         }
     }
@@ -145,7 +162,7 @@ class GoalItem extends Item {
     }
 
     void event(Player player) {
-        scene = "goal";
+        player.goal();
     }
 
     void display() {
@@ -165,6 +182,7 @@ class BoostItem extends Item {
     }
 
     void event(Player player) {
+        sounds[2].play();
         player.vy = player.maxJump;
     }
     
@@ -191,14 +209,15 @@ class Star {
     void display(float addY) {
         float drawY = y - baseY + addY;
         if (-height/2 < drawY && drawY < height*3/2) {
-            fill(255);
+            fill(127, 95, 159);
             ellipse(x, drawY, size, size);
         }
     }
 }
 
 class Platform {
-    float x, y, w, px, py, vx = 0, vy = 0;
+    float x, y, px, py, vx = 0, vy = 0;
+    int w;
     color c = color(127, 63, 0);
     Platform(float x, float y, int w) {
         this.x = x;
@@ -209,7 +228,17 @@ class Platform {
     }
 
     void collision(Player player) {
-        if ((player.py + player.radius <= y && player.y + player.radius > y) && ((player.x + player.radius > x && player.x - player.radius < x + blockSize*w) || (player.x + player.radius > x - width && player.x - player.radius < x + blockSize*w - width))) {
+        float subX = x;
+        if (subX < 0) {
+            while (subX < 0) {
+                subX += width;
+            }
+        } else if (subX >= width) {
+            while (subX >= width) {
+                subX -= width;
+            }
+        }
+        if ((player.py + player.radius <= y && player.y + player.radius > y) && ((player.x + player.radius > subX && player.x - player.radius < subX + blockSize*w) || (player.x + player.radius > subX - width && player.x - player.radius < subX + blockSize*w - width))) {
             player.y = y - player.radius;
             player.vy = 0;
             player.x += this.vx;
@@ -219,12 +248,22 @@ class Platform {
 
     void display() {
         float drawY = y - baseY;
-        float endX = x + blockSize*w;
+        float subX = x;
+        if (subX < 0) {
+            while (subX < 0) {
+                subX += width;
+            }
+        } else if (subX >= width) {
+            while (subX >= width) {
+                subX -= width;
+            }
+        }
+        float endX = subX + blockSize*w;
         if (-height/2 < drawY && drawY < height*3/2) {
             fill(c);
-            rect(x, drawY, blockSize*w, blockSize);
+            rect(subX, drawY, blockSize*w, blockSize);
             if (endX > width) {
-                rect(x - width, drawY, blockSize*w, blockSize);
+                rect(subX - width, drawY, blockSize*w, blockSize);
             }
         }
     }
@@ -250,11 +289,12 @@ class MovePlatform extends Platform {
             x = - x + x0*2;
             vx = -vx;
         }
-        if (x < 0) {
-            x += width;
-        } else if (x > width) {
-            x -= width;
-        }
+
+        // if (x < 0) {
+        //     x += width;
+        // } else if (x > width) {
+        //     x -= width;
+        // }
     }
 }
 
@@ -262,7 +302,7 @@ class Acid extends Platform {
     Acid(float y, float vy) {
         super(0, y, width/blockSize);
         this.vy = vy;
-        this.c = color(0, 255, 0);
+        this.c = color(255, 0, 255);
     }
 
     void update() {
@@ -274,8 +314,18 @@ class Acid extends Platform {
     }
 
     void collision(Player player) {
-        if ((player.py + player.radius <= py && player.y + player.radius > y) && ((player.x + player.radius > x && player.x - player.radius < x + blockSize*w) || (player.x + player.radius > x - width && player.x - player.radius < x + blockSize*w - width))) {
-            // player.y = y - player.radius;
+        float subX = x;
+        if (subX < 0) {
+            while (subX < 0) {
+                subX += width;
+            }
+        } else if (subX >= width) {
+            while (subX >= width) {
+                subX -= width;
+            }
+        }
+        if ((player.py <= py && player.y > y) && ((player.x + player.radius > subX && player.x - player.radius < subX + blockSize*w) || (player.x + player.radius > subX - width && player.x - player.radius < subX + blockSize*w - width))) {
+            vy = 0;
             player.vy = 0;
             player.dead();
         }
@@ -283,14 +333,63 @@ class Acid extends Platform {
 
     void display() {
         float drawY = y - baseY;
-        if (-height/2 < drawY && drawY < height*3/2) {
+        float subX = x;
+        if (subX < 0) {
+            while (subX < 0) {
+                subX += width;
+            }
+        } else if (subX >= width) {
+            while (subX >= width) {
+                subX -= width;
+            }
+        }
+        if (-height < drawY && drawY < height*3/2) {
             fill(c);
-            rect(x, drawY, blockSize*w, blockSize);
-            rect(x, drawY+blockSize, blockSize*w, height*3/2);
+            rect(subX, drawY+blockSize/2, blockSize*w, height);
+            rect(subX, drawY, blockSize*w, blockSize);
         }
     }
 }
 
+void loadStage(int num) {
+    JSONArray stages = loadJSONArray("stages.json");
+    maxStageNum = stages.size() - 1;
+    JSONObject stage = stages.getJSONObject(num);;
+    JSONArray platformsJSON = stage.getJSONArray("platforms");
+    JSONArray movePlatformsJSON = stage.getJSONArray("movePlatforms");
+    JSONArray boostItemsJSON = stage.getJSONArray("boostItems");
+
+    stars.clear();
+    platforms.clear();
+    movePlatforms.clear();
+    boostItems.clear();
+
+    String bgColorHex = stage.getString("bgColor").replace("#", "");
+    bgColor = unhex(bgColorHex);
+    boxNum = stage.getInt("boxNum");
+    totalHeight = boxHeight * boxNum;
+    baseY = totalHeight - height;
+    
+    player = new Player(width/2, totalHeight - blockSize*2 - ballSize/2);
+    goal = new GoalItem(width/2, 200);
+    platforms.add(new Platform(0, totalHeight - blockSize*2, width/blockSize));
+    acid = new Acid(totalHeight + height * stage.getJSONObject("acid").getFloat("y"), stage.getJSONObject("acid").getFloat("vy"));
+    for (int i = 0; i < stage.getInt("starNum"); ++i) {
+        stars.add(new Star());
+    }
+    for (int i = 0; i < platformsJSON.size(); i++) {
+        JSONObject platformJSON = platformsJSON.getJSONObject(i);
+        platforms.add(new Platform(width * platformJSON.getFloat("x"), totalHeight * (1.0 - platformJSON.getFloat("y")), platformJSON.getInt("w")));
+    }
+    for (int i = 0; i < movePlatformsJSON.size(); i++) {
+        JSONObject movePlatformJSON = movePlatformsJSON.getJSONObject(i);
+        movePlatforms.add(new MovePlatform(width * movePlatformJSON.getFloat("x"), totalHeight * (1.0 - movePlatformJSON.getFloat("y")), movePlatformJSON.getInt("w"), movePlatformJSON.getFloat("vx"), width * movePlatformJSON.getFloat("rangeX")));
+    }
+    for (int i = 0; i < boostItemsJSON.size(); i++) {
+        JSONObject boostItemJSON = boostItemsJSON.getJSONObject(i);
+        boostItems.add(new BoostItem(width * boostItemJSON.getFloat("x"), totalHeight * (1.0 - boostItemJSON.getFloat("y"))));
+    }
+}
 
 
 Player player;
@@ -304,38 +403,37 @@ ArrayList<MovePlatform> movePlatforms = new ArrayList<MovePlatform>();
 void setup() {
     size(800, 600);
     frameRate(fps);
-    background(0);
+    background(bgColor);
     noStroke();
+
+    sounds[0] = new SoundFile(this, "sounds/jump.mp3");
+    sounds[1] = new SoundFile(this, "sounds/clear.mp3");
+    sounds[2] = new SoundFile(this, "sounds/fish.mp3");
+    sounds[3] = new SoundFile(this, "sounds/dead.mp3");
+    sounds[4] = new SoundFile(this, "sounds/gameover.mp3");
     
-    player = new Player(width/2, totalHeight - blockSize*2 - ballSize/2);
-    goal = new GoalItem(width/2, 200);
-    platforms.add(new Platform(0, totalHeight - blockSize*2, width/blockSize));
-    acid = new Acid(totalHeight + height * 1, -1.5);
-    for (int i = 0; i < 8; ++i) {
-        stars.add(new Star());
-    }
-    boostItems.add(new BoostItem(random(width), 600));
-    boostItems.add(new BoostItem(random(width), 1000));
-    boostItems.add(new BoostItem(random(width), 1400));
-    boostItems.add(new BoostItem(random(width), 1800));
-    platforms.add(new Platform(random(width), totalHeight - boxHeight, 10));
-    platforms.add(new Platform(random(width), totalHeight - boxHeight*1.7, 5));
-    movePlatforms.add(new MovePlatform(random(width), totalHeight - boxHeight*2.4, 5, 1, 200));
-    platforms.add(new Platform(random(width), totalHeight - boxHeight*3.1, 15));
-    movePlatforms.add(new MovePlatform(random(width), totalHeight - boxHeight*3.8, 5, 2, 300));
+    loadStage(stageNum);
 }
 
 
 
 boolean wasSpaceKeyPressed = false;
 void draw() {
-    background(0);
+    background(bgColor);
     for (Star star : stars) {
         for (int i = 0; i < boxNum; i++) {
             star.display(i*boxHeight);
         }
     }
     
+    if (scene == "pause") {
+        fill(255);
+        textSize(50);
+        text("Press Space Key to Start", width/2 - 200, height/2);
+        if (keys[' '] || keys[32]) {
+            scene = "game";
+        }
+    }
     if (scene == "game") {
         player.move(0);
         if (keys['A'] || keys['a'] || keys[LEFT]) {
@@ -352,25 +450,37 @@ void draw() {
             wasSpaceKeyPressed = false;
         }
         player.update();
+        goal.collision(player);
+        for (BoostItem boostItem : boostItems) {
+            boostItem.collision(player);
+        }
+        for (Platform platform : platforms) {
+            platform.collision(player);
+        }
+        for (MovePlatform movePlatform : movePlatforms) {
+            movePlatform.update();
+            movePlatform.collision(player);
+        }
+        acid.update();
+        acid.collision(player);
+    }
+    if (scene == "goal" || scene == "dead") {
+        if (keys['R'] || keys['r']) {
+            loadStage(stageNum);
+            scene = "game";
+        }
     }
 
-    goal.collision(player);
     goal.display();
     for (BoostItem boostItem : boostItems) {
-        boostItem.collision(player);
         boostItem.display();
     }
     for (Platform platform : platforms) {
-        platform.collision(player);
         platform.display();
     }
     for (MovePlatform movePlatform : movePlatforms) {
-        movePlatform.update();
-        movePlatform.collision(player);
         movePlatform.display();
     }
-    acid.update();
-    acid.collision(player);
     acid.display();
     player.display();
 
@@ -378,11 +488,14 @@ void draw() {
         fill(255);
         textSize(50);
         text("Goal!", width/2 - 50, height/2);
+        textSize(20);
+        text("Press R to Continue", width/2 - 100, height/2 + 50);
     }
-    if (player.status == "dead") {
+    if (scene == "dead") {
         fill(255);
         textSize(50);
         text("Game Over", width/2 - 100, height/2);
-        
+        textSize(20);
+        text("Press R to Restart", width/2 - 100, height/2 + 50);
     }
 }
