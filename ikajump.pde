@@ -46,7 +46,7 @@ class Player {
     int radius = size / 2;
     int jumpCount = 1;
     int chargeFrame = 0;
-    float maxJump = -22;
+    float maxJump = -21;
 
     Player(float x, float y) {
         this.x = x;
@@ -104,9 +104,9 @@ class Player {
             vy += gravity;
         }
         if (vy > 0) {
-            vy = min(vy, maxVelocity*16);
+            vy = min(vy, maxVelocity*8);
         } else {
-            vy = max(vy, -maxVelocity*16);
+            vy = max(vy, -maxVelocity*8);
         }
         px = x;
         py = y;
@@ -122,12 +122,12 @@ class Player {
             vy = 0;
         }
         
-        if (y < height/2) {
+        if (y < height*3/5) {
             baseY = 0;
-        } else if (y > totalHeight - height/2) {
+        } else if (y > totalHeight - height*2/5) {
             baseY = totalHeight - height;
         } else {
-            baseY = y - height / 2;
+            baseY = y - height*3/5;
         }
     }
 
@@ -408,9 +408,9 @@ void loadStage(int num) {
     totalHeight = boxHeight * boxNum;
     baseY = totalHeight - height;
     
-    player = new Player(width/2, totalHeight - blockSize*2 - ballSize/2);
+    player = new Player(width/2, totalHeight - blockSize*4 - ballSize/2);
     goal = new GoalItem(width/2, 200);
-    platforms.add(new Platform(0, totalHeight - blockSize*2, width/blockSize));
+    platforms.add(new Platform(0, totalHeight - blockSize*4, width/blockSize));
     acid = new Acid(totalHeight + height * stage.getJSONObject("acid").getFloat("y"), stage.getJSONObject("acid").getFloat("vy"));
     for (int i = 0; i < stage.getInt("starNum"); ++i) {
         stars.add(new Star());
@@ -533,19 +533,22 @@ void draw() {
     if (scene == "goal") {
         fill(255);
         textSize(50);
-        text("Goal!", width/2 - 50, height/2);
+        textAlign(CENTER, CENTER);
+        text("GOAL!", width/2, height/2);
     }
     if (scene == "dead") {
         fill(255);
         textSize(50);
-        text("Game Over", width/2 - 100, height/2);
+        textAlign(CENTER, CENTER);
+        text("MISS!", width/2, height/2);
     }
     if (scene == "pause") {
         fill(0, 127);
         rect(0, 0, width, height);
         fill(255);
         textSize(20);
-        text("Press Space Key to Start", width/2 - 100, height/2);
+        textAlign(CENTER, CENTER);
+        text("Press Space Key to Start", width/2, height/2);
         if (keys[' '] || keys[32]) {
             scene = "game";
         }
