@@ -200,12 +200,12 @@ class GoalItem extends Item {
     }
 
     void display() {
-        if (exists) {
+        // if (exists) {
             float drawY = y - baseY;
             if (-height/2 < drawY && drawY < height*3/2) {
                 image(images.get("goal"), x - radius, drawY - radius, size, size);
             }
-        }
+        // }
     }
 }
 
@@ -407,9 +407,9 @@ void loadStage(int num) {
     totalHeight = boxHeight * boxNum;
     baseY = totalHeight - height;
     
-    player = new Player(width/2, totalHeight - blockSize*4 - ballSize/2);
+    player = new Player(width/2, totalHeight - blockSize*6 - ballSize/2);
     goal = new GoalItem(width/2, 200);
-    platforms.add(new Platform(0, totalHeight - blockSize*4, width/blockSize));
+    platforms.add(new Platform(0, totalHeight - blockSize*6, width/blockSize));
     acid = new Acid(totalHeight + height * stage.getJSONObject("acid").getFloat("y"), stage.getJSONObject("acid").getFloat("vy"));
     for (int i = 0; i < stage.getInt("starNum"); ++i) {
         stars.add(new Star());
@@ -438,7 +438,7 @@ ArrayList<Platform> platforms = new ArrayList<Platform>();
 ArrayList<MovePlatform> movePlatforms = new ArrayList<MovePlatform>();
 
 void setup() {
-    size(800, 600);
+    size(800, 700);
     frameRate(fps);
     background(bgColor);
     noStroke();
