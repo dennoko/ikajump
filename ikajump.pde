@@ -1,6 +1,7 @@
 import processing.sound.*;
-SoundFile sounds[] = new SoundFile[5];
-PImage images[] = new PImage[13];
+JSONArray stages;
+HashMap<String, SoundFile> sounds = new HashMap<String, SoundFile>();
+HashMap<String, PImage> images = new HashMap<String, PImage>();
 
 int fps = 60;
 int waitFrame = 0;
@@ -77,7 +78,7 @@ class Player {
 
     void jump() {
         if (chargeFrame != 0 && jumpCount > 0 && status == "alive") {
-            sounds[0].play();
+            sounds.get("jump").play();
             vy = maxJump * ((float)min(chargeFrame, fps/2) / (fps/2));
             jumpCount--;
         }
@@ -85,7 +86,7 @@ class Player {
     }
 
     void goal() {
-        sounds[1].play();
+        sounds.get("clear").play();
         scene = "goal";
         stageNum++;
         if (stageNum > maxStageNum) {
@@ -94,7 +95,7 @@ class Player {
     }
 
     void dead() {
-        sounds[3].play();
+        sounds.get("dead").play();
         status = "dead";
         scene = "dead";
     }
@@ -135,30 +136,30 @@ class Player {
         float drawY = y - baseY;
         if (-height/2 < drawY && drawY < height*3/2) {
             if (status == "dead") {
-                image(images[7], x - radius, drawY - radius, size, size);
+                image(images.get("dead"), x - radius, drawY - radius, size, size);
             } else {
                 if (chargeFrame == 0) {
-                    image(images[0], x - radius, drawY - radius, size, size);
+                    image(images.get("ika"), x - radius, drawY - radius, size, size);
                 } else if (chargeFrame < fps/6) {
-                    image(images[1], x - radius, drawY - radius, size, size);
+                    image(images.get("charge1"), x - radius, drawY - radius, size, size);
                 } else if (chargeFrame < fps/3) {
-                    image(images[2], x - radius, drawY - radius, size, size);
+                    image(images.get("charge2"), x - radius, drawY - radius, size, size);
                 } else if (chargeFrame < fps/2) {
-                    image(images[3], x - radius, drawY - radius, size, size);
+                    image(images.get("charge3"), x - radius, drawY - radius, size, size);
                 } else {
                     int re = (chargeFrame - fps/2)/4 % 4;
                     switch (re) {
                         case 0:
-                            image(images[4], x - radius, drawY - radius, size, size);
+                            image(images.get("charge4"), x - radius, drawY - radius, size, size);
                             break;
                         case 1:
-                            image(images[5], x - radius, drawY - radius, size, size);
+                            image(images.get("charge5"), x - radius, drawY - radius, size, size);
                             break;
                         case 2:
-                            image(images[6], x - radius, drawY - radius, size, size);
+                            image(images.get("charge6"), x - radius, drawY - radius, size, size);
                             break;
                         case 3:
-                            image(images[5], x - radius, drawY - radius, size, size);
+                            image(images.get("charge5"), x - radius, drawY - radius, size, size);
                             break;
                     }
                 }
@@ -202,7 +203,7 @@ class GoalItem extends Item {
         if (exists) {
             float drawY = y - baseY;
             if (-height/2 < drawY && drawY < height*3/2) {
-                image(images[8], x - radius, drawY - radius, size, size);
+                image(images.get("goal"), x - radius, drawY - radius, size, size);
             }
         }
     }
@@ -214,7 +215,7 @@ class BoostItem extends Item {
     }
 
     void event(Player player) {
-        sounds[2].play();
+        sounds.get("fish").play();
         player.vy = player.maxJump;
     }
     
@@ -222,7 +223,7 @@ class BoostItem extends Item {
         if (exists) {
             float drawY = y - baseY;
             if (-height/2 < drawY && drawY < height*3/2) {
-                image(images[12], x - radius, drawY - radius, size, size);
+                image(images.get("fish"), x - radius, drawY - radius, size, size);
             }
         }
     }
@@ -250,7 +251,7 @@ class Platform {
     float x, y, px, py, vx = 0, vy = 0;
     int w;
     color c = color(127, 63, 0);
-    int imageNum = 9;
+    String imageStr = "block";
     Platform(float x, float y, int w) {
         this.x = x;
         this.y = y;
@@ -260,17 +261,17 @@ class Platform {
     }
 
     void collision(Player player) {
-        float subX = x;
-        if (subX < 0) {
-            while (subX < 0) {
-                subX += width;
+        float virtualX = x;
+        if (virtualX < 0) {
+            while (virtualX < 0) {
+                virtualX += width;
             }
-        } else if (subX >= width) {
-            while (subX >= width) {
-                subX -= width;
+        } else if (virtualX >= width) {
+            while (virtualX >= width) {
+                virtualX -= width;
             }
         }
-        if ((player.py + player.radius <= y && player.y + player.radius > y) && ((player.x + player.radius > subX && player.x - player.radius < subX + blockSize*w) || (player.x + player.radius > subX - width && player.x - player.radius < subX + blockSize*w - width))) {
+        if ((player.py + player.radius <= y && player.y + player.radius > y) && ((player.x + player.radius > virtualX && player.x - player.radius < virtualX + blockSize*w) || (player.x + player.radius > virtualX - width && player.x - player.radius < virtualX + blockSize*w - width))) {
             player.y = y - player.radius;
             player.vy = 0;
             player.x += this.vx;
@@ -280,24 +281,24 @@ class Platform {
 
     void display() {
         float drawY = y - baseY;
-        float subX = x;
-        if (subX < 0) {
-            while (subX < 0) {
-                subX += width;
+        float virtualX = x;
+        if (virtualX < 0) {
+            while (virtualX < 0) {
+                virtualX += width;
             }
-        } else if (subX >= width) {
-            while (subX >= width) {
-                subX -= width;
+        } else if (virtualX >= width) {
+            while (virtualX >= width) {
+                virtualX -= width;
             }
         }
-        float endX = subX + blockSize*w;
+        float endX = virtualX + blockSize*w;
         if (-height/2 < drawY && drawY < height*3/2) {
             for (int i = 0; i < w; i++) {
-                image(images[imageNum], subX + blockSize*i, drawY, blockSize, blockSize);
+                image(images.get(imageStr), virtualX + blockSize*i, drawY, blockSize, blockSize);
             }
             if (endX > width) {
                 for (int i = 0; i < w; i++) {
-                    image(images[imageNum], subX - width + blockSize*i, drawY, blockSize, blockSize);
+                    image(images.get(imageStr), virtualX - width + blockSize*i, drawY, blockSize, blockSize);
                 }
             }
         }
@@ -312,7 +313,7 @@ class MovePlatform extends Platform {
         this.vx = vx;
         this.rangeX = rangeX;
         // this.c = color(127, 127, 255);
-        this.imageNum = 10;
+        this.imageStr = "jerry";
     }
 
     void update() {
@@ -350,17 +351,17 @@ class Acid extends Platform {
     }
 
     void collision(Player player) {
-        float subX = x;
-        if (subX < 0) {
-            while (subX < 0) {
-                subX += width;
+        float virtualX = x;
+        if (virtualX < 0) {
+            while (virtualX < 0) {
+                virtualX += width;
             }
-        } else if (subX >= width) {
-            while (subX >= width) {
-                subX -= width;
+        } else if (virtualX >= width) {
+            while (virtualX >= width) {
+                virtualX -= width;
             }
         }
-        if ((player.py <= py && player.y > y) && ((player.x + player.radius > subX && player.x - player.radius < subX + blockSize*w) || (player.x + player.radius > subX - width && player.x - player.radius < subX + blockSize*w - width))) {
+        if ((player.py <= py && player.y > y) && ((player.x + player.radius > virtualX && player.x - player.radius < virtualX + blockSize*w) || (player.x + player.radius > virtualX - width && player.x - player.radius < virtualX + blockSize*w - width))) {
             vy = 0;
             player.vy = 0;
             player.dead();
@@ -369,29 +370,27 @@ class Acid extends Platform {
 
     void display() {
         float drawY = y - baseY;
-        float subX = x;
-        if (subX < 0) {
-            while (subX < 0) {
-                subX += width;
+        float virtualX = x;
+        if (virtualX < 0) {
+            while (virtualX < 0) {
+                virtualX += width;
             }
-        } else if (subX >= width) {
-            while (subX >= width) {
-                subX -= width;
+        } else if (virtualX >= width) {
+            while (virtualX >= width) {
+                virtualX -= width;
             }
         }
         if (-height < drawY && drawY < height*3/2) {
             fill(c);
-            rect(subX, drawY+blockSize/2, blockSize*w, height);
+            rect(virtualX, drawY+blockSize/2, blockSize*w, height);
             for (int i = 0; i < w; i++) {
-                image(images[11], subX + blockSize*i, drawY, blockSize, blockSize);
+                image(images.get("acid"), virtualX + blockSize*i, drawY, blockSize, blockSize);
             }
         }
     }
 }
 
 void loadStage(int num) {
-    JSONArray stages = loadJSONArray("stages.json");
-    maxStageNum = stages.size() - 1;
     JSONObject stage = stages.getJSONObject(num);;
     JSONArray platformsJSON = stage.getJSONArray("platforms");
     JSONArray movePlatformsJSON = stage.getJSONArray("movePlatforms");
@@ -444,24 +443,26 @@ void setup() {
     background(bgColor);
     noStroke();
 
-    sounds[0] = new SoundFile(this, "sounds/jump.mp3");
-    sounds[1] = new SoundFile(this, "sounds/clear.mp3");
-    sounds[2] = new SoundFile(this, "sounds/fish.mp3");
-    sounds[3] = new SoundFile(this, "sounds/dead.mp3");
-    sounds[4] = new SoundFile(this, "sounds/gameover.mp3");
-    images[0] = loadImage("images/ika.png");
-    images[1] = loadImage("images/charge1.png");
-    images[2] = loadImage("images/charge2.png");
-    images[3] = loadImage("images/charge3.png");
-    images[4] = loadImage("images/charge4.png");
-    images[5] = loadImage("images/charge5.png");
-    images[6] = loadImage("images/charge6.png");
-    images[7] = loadImage("images/dead.png");
-    images[8] = loadImage("images/goal.png");
-    images[9] = loadImage("images/block.png");
-    images[10] = loadImage("images/jerry.png");
-    images[11] = loadImage("images/acid.png");
-    images[12] = loadImage("images/fish.png");
+    stages = loadJSONArray("stages.json");
+    maxStageNum = stages.size() - 1;
+    sounds.put("jump", new SoundFile(this, "sounds/jump.mp3"));
+    sounds.put("clear", new SoundFile(this, "sounds/clear.mp3"));
+    sounds.put("fish", new SoundFile(this, "sounds/fish.mp3"));
+    sounds.put("dead", new SoundFile(this, "sounds/dead.mp3"));
+    sounds.put("gameover", new SoundFile(this, "sounds/gameover.mp3"));
+    images.put("ika", loadImage("images/ika.png"));
+    images.put("charge1", loadImage("images/charge1.png"));
+    images.put("charge2", loadImage("images/charge2.png"));
+    images.put("charge3", loadImage("images/charge3.png"));
+    images.put("charge4", loadImage("images/charge4.png"));
+    images.put("charge5", loadImage("images/charge5.png"));
+    images.put("charge6", loadImage("images/charge6.png"));
+    images.put("dead", loadImage("images/dead.png"));
+    images.put("goal", loadImage("images/goal.png"));
+    images.put("block", loadImage("images/block.png"));
+    images.put("jerry", loadImage("images/jerry.png"));
+    images.put("acid", loadImage("images/acid.png"));
+    images.put("fish", loadImage("images/fish.png"));
     
     loadStage(stageNum);
 }
