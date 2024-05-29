@@ -91,7 +91,7 @@ class Player {
         scene = "goal";
         stageNum++;
         if (stageNum > maxStageNum) {
-            stageNum = maxStageNum;
+            stageNum = 0;
         }
     }
 
