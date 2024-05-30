@@ -97,6 +97,7 @@ class Player {
 
     void dead() {
         sounds.get("dead").play();
+        vy = 0;
         status = "dead";
         scene = "dead";
     }
@@ -364,7 +365,6 @@ class Acid extends Platform {
         }
         if ((player.py <= py && player.y > y) && ((player.x + player.radius > virtualX && player.x - player.radius < virtualX + blockSize*w) || (player.x + player.radius > virtualX - width && player.x - player.radius < virtualX + blockSize*w - width))) {
             vy = 0;
-            player.vy = 0;
             player.dead();
         }
     }
@@ -487,12 +487,18 @@ void draw() {
         if (keys['D'] || keys['d'] || keys[RIGHT]) {
             player.move(1);
         }
-        if (keys[' '] || keys[32] || keys['E'] || keys['e']) {
+        if (keys[' '] || keys[32]) {
             wasSpaceKeyPressed = true;
             player.chargeJump();
         } else if (wasSpaceKeyPressed) {
             player.jump();
             wasSpaceKeyPressed = false;
+        }
+        if (keys['R'] || keys['r']) {
+            player.dead();
+        }
+        if (keys['P'] || keys['p']) {
+            scene = "pause";
         }
         player.update();
         goal.collision(player);
@@ -551,8 +557,10 @@ void draw() {
         textSize(20);
         textAlign(CENTER, CENTER);
         text("Press Space Key to Start", width/2, height/2);
-        if (keys[' '] || keys[32] || keys['E'] || keys['e']) {
+        if (keys[' '] || keys[32]) {
+            if (scene == "pause") {
             scene = "game";
+            }
         }
     }
 }
