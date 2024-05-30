@@ -487,7 +487,7 @@ void draw() {
         if (keys['D'] || keys['d'] || keys[RIGHT]) {
             player.move(1);
         }
-        if (keys[' '] || keys[32]) {
+        if (keys[' '] || keys[32] || keys['E'] || keys['e']) {
             wasSpaceKeyPressed = true;
             player.chargeJump();
         } else if (wasSpaceKeyPressed) {
@@ -551,7 +551,7 @@ void draw() {
         textSize(20);
         textAlign(CENTER, CENTER);
         text("Press Space Key to Start", width/2, height/2);
-        if (keys[' '] || keys[32]) {
+        if (keys[' '] || keys[32] || keys['E'] || keys['e']) {
             scene = "game";
         }
     }
