@@ -1,3 +1,4 @@
+
 import processing.sound.*;
 JSONArray stages;
 HashMap<String, SoundFile> sounds = new HashMap<String, SoundFile>();
@@ -90,12 +91,13 @@ class Player {
         scene = "goal";
         stageNum++;
         if (stageNum > maxStageNum) {
-            stageNum = maxStageNum;
+            stageNum = 0;
         }
     }
 
     void dead() {
         sounds.get("dead").play();
+        vy = 0;
         status = "dead";
         scene = "dead";
     }
@@ -363,7 +365,6 @@ class Acid extends Platform {
         }
         if ((player.py <= py && player.y > y) && ((player.x + player.radius > virtualX && player.x - player.radius < virtualX + blockSize*w) || (player.x + player.radius > virtualX - width && player.x - player.radius < virtualX + blockSize*w - width))) {
             vy = 0;
-            player.vy = 0;
             player.dead();
         }
     }
@@ -493,6 +494,14 @@ void draw() {
             player.jump();
             wasSpaceKeyPressed = false;
         }
+        if (keys['R'] || keys['r']) {
+            player.dead();
+        }
+        if (keys['P'] || keys['p']) {
+            if (scene == "game") {
+                scene = "pause";
+            }
+        }
         player.update();
         goal.collision(player);
         for (BoostItem boostItem : boostItems) {
@@ -551,7 +560,9 @@ void draw() {
         textAlign(CENTER, CENTER);
         text("Press Space Key to Start", width/2, height/2);
         if (keys[' '] || keys[32]) {
-            scene = "game";
+            if (scene == "pause") {
+                scene = "game";
+            }
         }
     }
 }
