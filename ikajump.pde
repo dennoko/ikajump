@@ -561,11 +561,7 @@ void draw() {
         text("Press Space Key to Start", width/2, height/2);
         if (keys[' '] || keys[32]) {
             if (scene == "pause") {
-<<<<<<< HEAD
-            scene = "game";
-=======
                 scene = "game";
->>>>>>> 8128
             }
         }
     }
