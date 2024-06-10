@@ -335,12 +335,6 @@ class MovePlatform extends Platform {
             x = - x + x0*2;
             vx = -vx;
         }
-
-        // if (x < 0) {
-        //     x += width;
-        // } else if (x > width) {
-        //     x -= width;
-        // }
     }
 }
 
